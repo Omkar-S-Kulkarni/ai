@@ -98,6 +98,12 @@ export interface PokemonSummary {
   url: string
   /** Thumbnail sprite URL derived from id */
   spriteUrl: string
+  /** Optional types if enriched */
+  types?: string[]
+  /** Optional base stats if enriched */
+  stats?: PokemonStat[]
+  /** Optional base experience if enriched */
+  baseExperience?: number | null
 }
 
 // ------------------------------------------------------------------

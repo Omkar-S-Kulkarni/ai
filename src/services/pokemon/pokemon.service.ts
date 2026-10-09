@@ -170,3 +170,63 @@ export async function fetchGenerationList(signal?: AbortSignal): Promise<Paginat
   )
   return { count: data.count, next: data.next, previous: data.previous, results: data.results }
 }
+
+// ------------------------------------------------------------------
+// List all types
+// ------------------------------------------------------------------
+export async function fetchTypeList(signal?: AbortSignal): Promise<PaginatedList<{ name: string; url: string }>> {
+  const { data } = await pokemonApiClient.get<ApiPaginatedResponse>(
+    POKEAPI_ENDPOINTS.type,
+    makeCancelable(signal),
+  )
+  // Filter out special non-standard types like shadow, unknown
+  const standardResults = data.results.filter(
+    (t) => t.name !== 'shadow' && t.name !== 'unknown'
+  )
+  return {
+    count: standardResults.length,
+    next: data.next,
+    previous: data.previous,
+    results: standardResults,
+  }
+}
+
+// ------------------------------------------------------------------
+// Fetch Pokémon by Type (for filtering)
+// ------------------------------------------------------------------
+export async function fetchPokemonByType(
+  typeName: string,
+  signal?: AbortSignal,
+): Promise<PokemonSummary[]> {
+  const { data } = await pokemonApiClient.get<ApiType>(
+    `${POKEAPI_ENDPOINTS.type}/${typeName.toLowerCase()}`,
+    makeCancelable(signal),
+  )
+  return data.pokemon.map((p) => normalizePokemonSummary(p.pokemon))
+}
+
+// ------------------------------------------------------------------
+// Fetch Pokémon by Generation (for filtering)
+// ------------------------------------------------------------------
+export async function fetchPokemonByGeneration(
+  genNameOrId: string | number,
+  signal?: AbortSignal,
+): Promise<PokemonSummary[]> {
+  const { data } = await pokemonApiClient.get<ApiGeneration>(
+    `${POKEAPI_ENDPOINTS.generation}/${genNameOrId}`,
+    makeCancelable(signal),
+  )
+  return data.pokemon_species.map(normalizePokemonSummary)
+}
+
+// ------------------------------------------------------------------
+// Fetch Multiple Pokémon by IDs or Names (e.g. for comparison or tray)
+// ------------------------------------------------------------------
+export async function fetchMultiplePokemon(
+  namesOrIds: (string | number)[],
+  signal?: AbortSignal,
+): Promise<PokemonDetails[]> {
+  if (!namesOrIds.length) return []
+  const promises = namesOrIds.map((id) => fetchPokemon(id, signal))
+  return Promise.all(promises)
+}

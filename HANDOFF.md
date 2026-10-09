@@ -1,23 +1,44 @@
 # PokéVerse — Developer Handoff Document
 
-> **Status:** Phase 1 Complete (Foundation & Live API Integration Verified)  
+> **Status:** Phase 2 Complete (Pokémon Discovery & Data Dashboard Implemented & Verified)  
 > **Last Updated:** October 9, 2026  
+> **Branch:** `feature/pokemon-dashboard`  
 > **Repository:** `d:\ai` (or cloned repository)
 
 ---
 
 ## 1. Executive Summary & Current State
 
-The foundation of **PokéVerse** is fully established, configured, and verified against live APIs. **No mock data or fake fallbacks are used.**
+The **PokéVerse Pokémon Discovery & Data Dashboard** is fully implemented, responsive, and verified against live PokéAPI endpoints.
 
-### What is Completed (Phase 1):
-- **Tooling & Build System:** React 18 + TypeScript + Vite 6 + Tailwind CSS v3 + React Router v6 + Lucide React + Framer Motion.
-- **Strict Quality Checks:** TypeScript (`tsc --noEmit`), ESLint 9, and Vite production build all pass with **0 errors and 0 warnings**.
-- **PokéAPI Service Layer:** Full integration with live [PokéAPI](https://pokeapi.co/api/v2/) covering Pokémon lists, details, species, evolution chains, stats, abilities, moves, types, and damage relations.
-- **IP Geolocation Layer:** Integration with live [IP-API](http://ip-api.com) with field filtering and provider abstraction, plus separate native browser GPS geolocation requiring explicit user action.
-- **Data Architecture:** Clear separation between raw API responses (`src/services/pokemon/pokemon.api.types.ts`) and normalized UI contracts (`src/types/`).
-- **Caching & Resilience:** Centralized React Query configuration with deduplication, stale-while-revalidate (10 min stale time), and `AbortSignal` request cancellation.
-- **Verification UI:** Developer-facing verification dashboard at `/` to test all endpoints interactively.
+### What is Completed:
+- **Pokémon Discovery Dashboard (`/`):**
+  - Full-text search by Pokémon name or Pokédex number.
+  - Multi-facet filters: 18 elemental types, 9 game generations / regions (Kanto through Paldea).
+  - Multi-attribute sorting: Pokédex # (Asc/Desc), Name (A-Z/Z-A), Height, Weight.
+  - Quick filters for Favorites and Recently Viewed.
+  - Dual view modes: Responsive Grid Cards and Compact Table-style List.
+  - Shimmering skeleton loading placeholders, animated error cards with retry, and friendly empty states.
+- **Dedicated Pokémon Profile (`/pokemon/:nameOrId`) & Quick Modal Preview:**
+  - Official high-resolution artwork + shiny form switcher.
+  - Key vitals: height, weight, base EXP, capture rate, gender ratios, growth rates, habitat, egg groups.
+  - Comprehensive Tabbed Interface:
+    - **Overview:** Multiversion Pokédex flavor text and breeding biology.
+    - **Base Stats:** Visual stat bars with Level 100 competitive min/max calculations and Tier ratings.
+    - **Type Matchups:** Live defense multipliers (4× Weaknesses, 2× Weaknesses, ½× Resistances, ¼× Resistances, 0× Immunities).
+    - **Abilities:** Standard and hidden abilities with full in-game effect descriptions.
+    - **Moves:** Filterable learnset by method (Level-up with level requirement, TM/Machine, Egg, Tutor).
+    - **Evolution Chain:** Interactive visual evolutionary lines with level/item triggers.
+    - Previous / Next Pokémon fast navigation headers.
+- **Side-by-Side Comparison Engine (`/compare`):**
+  - Compare 2 to 4 selected Pokémon simultaneously.
+  - Stat comparison with stat category leaders highlighted (without falsely declaring an overall "winner").
+  - Physical attribute comparison (height, weight, base EXP, abilities).
+- **Persistent Selection Tray & Favorites (`/favorites`):**
+  - Global `PokemonContext` with active comparison tray (up to 4 Pokémon) persistent across all page navigation.
+  - Favorites & Recently Viewed history saved to `localStorage`.
+- **Developer Integration Verification (`/verify`):**
+  - Retained the Phase 1 developer integration page without breaking existing tests.
 
 ---
 
@@ -25,15 +46,15 @@ The foundation of **PokéVerse** is fully established, configured, and verified 
 
 | Area | Technology | Version | Purpose |
 |---|---|---|---|
-| **Runtime / UI** | React | `^18.3.1` | View layer with `StrictMode` enabled |
+| **Runtime / UI** | React | `^18.3.1` | StrictMode view layer |
 | **Language** | TypeScript | `~5.7.2` | Strict typing with `@/*` path alias |
 | **Bundler / Dev** | Vite | `^6.0.5` | Fast HMR and production bundling |
 | **Styling** | Tailwind CSS | `^3.4.17` | Utility styling + custom Pokémon type palette |
 | **Data Fetching** | `@tanstack/react-query` | `^5.62.7` | Caching, deduplication, query keys |
 | **HTTP Client** | Axios | `^1.7.9` | Request cancellation, timeouts, interceptors |
-| **Routing** | React Router DOM | `^6.28.0` | Client-side navigation |
+| **Routing** | React Router DOM | `^6.28.0` | Client-side navigation & deep linking |
 | **Icons** | Lucide React | `^0.468.0` | SVG icons across UI components |
-| **Animations** | Framer Motion | `^11.15.0` | Ready for simulation and UI transitions |
+| **Animations** | Framer Motion | `^11.15.0` | Micro-interactions and UI transitions |
 
 ---
 
@@ -41,8 +62,6 @@ The foundation of **PokéVerse** is fully established, configured, and verified 
 
 ```
 d:\ai/
-├── .env.example                     # Environment variables documentation
-├── .gitignore                       # Clean git ignore for node, vite, build, env
 ├── eslint.config.js                 # ESLint 9 flat config
 ├── index.html                       # HTML entry point
 ├── package.json                     # Scripts & dependencies
@@ -54,22 +73,36 @@ d:\ai/
 ├── tsconfig.node.json               # Node tsconfig for Vite configuration
 ├── vite.config.ts                   # Vite config with @/ path resolution
 └── src/
-    ├── App.tsx                      # Root App with QueryClientProvider & Router
+    ├── App.tsx                      # Root App with QueryClientProvider, PokemonProvider & Router
     ├── main.tsx                     # DOM mount point
     ├── index.css                    # Tailwind directives & type badge CSS utilities
     ├── app/
     │   └── Router.tsx               # App routing configuration
+    ├── context/
+    │   └── PokemonContext.tsx       # Selection tray, favorites, & recent history context
     ├── components/
+    │   ├── layout/                  # Navigation & Shell
+    │   │   ├── AppNavbar.tsx        # Top navigation with badges & responsive menu
+    │   │   ├── SelectionTray.tsx    # Floating persistent comparison tray (up to 4 Pokémon)
+    │   │   ├── AppLayout.tsx        # Shell wrapper with Navbar, main, & tray
+    │   │   └── index.ts
     │   ├── ui/                      # Shared reusable UI primitives
     │   │   ├── TypeBadge.tsx        # Pokémon type badge with custom colors
-    │   │   ├── StatBar.tsx          # Animated stat bar with ARIA attributes
-    │   │   ├── LoadingSpinner.tsx   # Configurable loading spinner
+    │   │   ├── StatBar.tsx          # Stat bar with ARIA attributes
+    │   │   ├── LoadingSpinner.tsx   # Accessible loading spinner
     │   │   ├── ErrorMessage.tsx     # Standard error display with retry
     │   │   └── index.ts
     │   └── pokemon/                 # Pokémon-specific domain components
-    │       ├── PokemonCard.tsx      # List item card with sprite & fallback
-    │       ├── PokemonDetail.tsx    # Full details: stats, moves, abilities, species
+    │       ├── PokemonCard.tsx      # Rich grid & compact cards with actions
+    │       ├── PokemonCardSkeleton.tsx # Shimmering loading placeholders
+    │       ├── PokemonFilterBar.tsx # Search, types, generation pills, sort, view toggles
+    │       ├── PokemonGrid.tsx      # Main discovery grid with pagination & modals
+    │       ├── PokemonDetail.tsx    # Tabbed profile: stats, moves, abilities, species
+    │       ├── PokemonDetailModal.tsx # Quick overlay preview from dashboard
+    │       ├── PokemonStatVisualizer.tsx # BST, Tier badges, Lv 100 min/max calculations
+    │       ├── PokemonTypeEffectiveness.tsx # Dual-type weakness/resistance matrix
     │       ├── EvolutionChainDisplay.tsx # Evolution tree visualization
+    │       ├── PokemonComparison.tsx # Side-by-side multi-pokemon comparison
     │       └── index.ts
     ├── hooks/
     │   ├── usePokemon.ts            # React Query hooks for all PokéAPI endpoints
@@ -79,7 +112,11 @@ d:\ai/
     │   ├── httpClient.ts            # Axios instances with error normalizers
     │   └── queryClient.ts           # React Query configuration & key factories
     ├── pages/
-    │   └── ApiVerification.tsx      # Interactive developer verification page
+    │   ├── PokedexPage.tsx          # Main discovery dashboard
+    │   ├── PokemonDetailPage.tsx    # Deep-dive Pokémon profile page
+    │   ├── ComparePage.tsx          # Multi-Pokémon comparison view
+    │   ├── FavoritesPage.tsx        # Favorites & recently viewed manager
+    │   └── ApiVerification.tsx      # Developer API verification & diagnostics
     ├── services/
     │   ├── pokemon/
     │   │   ├── pokemon.api.types.ts # Raw API JSON response typings
@@ -96,141 +133,53 @@ d:\ai/
     │   ├── simulation.ts            # Future simulation & battle engine contracts
     │   └── index.ts                 # Barrel export
     └── utils/
-        └── index.ts                 # Formatting (height, weight, stats, colors)
+        └── index.ts                 # Formatting (height, weight, stats, toDisplayName)
 ```
 
 ---
 
-## 4. API Reference & Provider Architecture
+## 4. Routes Map
 
-### A. PokéAPI (`https://pokeapi.co/api/v2`)
-Central service: [`src/services/pokemon/pokemon.service.ts`](file:///d:/ai/src/services/pokemon/pokemon.service.ts)
-- `fetchPokemonList(limit, offset, signal)`: Paginated overview.
-- `fetchPokemon(nameOrId, signal)`: Full details (stats, types, abilities, moves, sprites).
-- `fetchPokemonSpecies(nameOrId, signal)`: Genus, flavor text, color, habitat, evolution chain URL.
-- `fetchEvolutionChain(chainId, signal)`: Evolution tree with trigger conditions.
-- `fetchEvolutionChainForPokemon(nameOrId, signal)`: Resolves species then chain.
-- `fetchType(nameOrId, signal)`: Damage relations (`doubleDamageTo`, `halfDamageFrom`, etc.).
-- `fetchAbility(nameOrId, signal)`: Ability effects.
-- `fetchGeneration(nameOrId, signal)` & `fetchPokedex(nameOrId, signal)`.
-
-### B. Geolocation Service
-Central service: [`src/services/geolocation/geolocation.service.ts`](file:///d:/ai/src/services/geolocation/geolocation.service.ts)
-- `fetchIpGeolocation(signal)`: Queries `http://ip-api.com/json` with field filtering.
-- `fetchBrowserGeolocation()`: Wraps `navigator.geolocation.getCurrentPosition()` as a Promise.
-
-> **CRITICAL PROVIDER LIMITATION & PRODUCTION NOTE:**
-> - The free tier of `ip-api.com` is **HTTP-only**.
-> - It works during local development (`http://localhost:5173`).
-> - In an HTTPS production deployment, browsers will block HTTP requests (Mixed Content policy).
-> - **Adapter ready:** To switch providers for production, update `ACTIVE_PROVIDER_CONFIG` in `src/services/geolocation/geolocation.service.ts` or route requests through a backend HTTPS proxy.
+| Route | Page | Purpose |
+|---|---|---|
+| `/` | `PokedexPage` | Primary Pokémon discovery dashboard with filtering, search & pagination |
+| `/pokemon/:nameOrId` | `PokemonDetailPage` | Deep-dive profile page with tabbed stats, moves, and evolution lines |
+| `/compare` | `ComparePage` | Side-by-side analysis for 2 to 4 selected Pokémon |
+| `/favorites` | `FavoritesPage` | Manage favorited Pokémon and review history |
+| `/verify` | `ApiVerificationPage` | Developer diagnostics and live API integration tests |
 
 ---
 
-## 5. Shared Data Contracts (`src/types/`)
-
-Import all contracts cleanly using `@/types`:
-
-```typescript
-import type {
-  PokemonSummary,
-  PokemonDetails,
-  PokemonStat,
-  PokemonType,
-  PokemonAbility,
-  PokemonSpecies,
-  EvolutionChain,
-  IpGeolocationResult,
-  GeographicLocation,
-  Competitor,
-  SimulationResult,
-  Leaderboard,
-  DeploymentConfig,
-} from '@/types'
-```
-
-*Note: `simulation.ts` specifies the interfaces for future competition & world simulation logic without coupling to UI.*
-
----
-
-## 6. Commands to Run & Verify
-
-All commands are PowerShell and bash compatible:
+## 5. Verification Commands
 
 ```powershell
-# 1. Install dependencies
-npm install
-
-# 2. Start local dev server (default: http://localhost:5173)
-npm run dev
-
-# 3. Run strict TypeScript check (0 errors expected)
+# TypeScript Type Check (0 errors expected)
 npm run type-check
 
-# 4. Run ESLint (0 errors expected)
+# ESLint Check (0 errors, 0 warnings expected)
 npm run lint
 
-# 5. Run full production build
+# Production Build
 npm run build
+
+# Start Local Dev Server
+npm run dev
 ```
 
 ---
 
-## 7. Working on Laptop 2 / Cloning Instructions
+## 6. Git Commands to Commit & Push Feature Branch
 
-To continue work on a second machine:
+```powershell
+# 1. Verify you are on the feature branch
+git branch
 
-1. Clone the repository:
-   ```powershell
-   git clone <REPO_URL>
-   cd ai
-   ```
-2. Install dependencies:
-   ```powershell
-   npm install
-   ```
-3. Start the dev server:
-   ```powershell
-   npm run dev
-   ```
-4. Verify by browsing to `http://localhost:5173`. No API keys or `.env` configuration are required for Phase 1.
+# 2. Stage all dashboard implementation files
+git add .
 
----
+# 3. Commit with semantic message
+git commit -m "feat(dashboard): implement pokemon discovery, details, comparison, and favorites"
 
-## 8. Next Steps & Phase 2 Roadmap
-
-When you continue development, proceed with the following modules in order:
-
-### Step 1: Main Application Shell & Navigation
-- Create layout components (`AppLayout`, `Sidebar`, `Header`) in `src/components/layout/`.
-- Set up routes in `src/app/Router.tsx` for:
-  - `/` -> Main Dashboard / World Overview
-  - `/pokedex` -> Full Interactive Pokédex
-  - `/map` -> Interactive World Map & Regional Pokémon Spawns
-  - `/arena` -> Simulation & Battle Engine
-  - `/verify` -> Developer API Verification (keep existing page accessible)
-
-### Step 2: Interactive Pokédex Explorer
-- Build a full-screen grid with virtualized scrolling or pagination.
-- Add multi-facet filtering (Type, Generation, Stat range, Legendary/Mythical).
-- Add Pokémon comparison modal (compare base stats side-by-side).
-
-### Step 3: PokéVerse World Map
-- Use Leaflet (`react-leaflet`) or Mapbox/deck.gl to render an interactive map.
-- Center map on the user's approximate IP geolocation (`useIpGeolocation`).
-- Plot Pokémon regional habitats and simulated biome encounters based on latitude/longitude/climate.
-
-### Step 4: Battle Simulation Engine
-- Implement the battle logic satisfying `SimulationResult` from `src/types/simulation.ts`.
-- Calculate type advantages using `fetchType` damage relations.
-- Add turn-by-turn combat visualizer with `framer-motion`.
-
----
-
-## 9. Code Conventions & Best Practices
-
-1. **Path Aliasing:** Always use `@/...` (e.g. `import { usePokemon } from '@/hooks/usePokemon'`).
-2. **Never Call APIs Directly in UI:** All data fetching must go through `src/services/` and `src/hooks/`.
-3. **Cancellation:** Always pass `signal` from `useQuery` query functions to service functions.
-4. **Type Separation:** Keep raw API response types in `*.api.types.ts` and normalized application models in `src/types/`.
-5. **No Fake Fallback Data:** If an API fails, bubble up the error state to the UI via `ErrorMessage` component.
+# 4. Push to remote feature branch
+git push -u origin feature/pokemon-dashboard
+```

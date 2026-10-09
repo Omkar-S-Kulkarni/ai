@@ -12,8 +12,11 @@ import {
   fetchEvolutionChainForPokemon,
   fetchType,
   fetchAbility,
-  fetchGeneration,
-  fetchPokedex,
+  fetchGenerationList,
+  fetchTypeList,
+  fetchPokemonByType,
+  fetchPokemonByGeneration,
+  fetchMultiplePokemon,
 } from '@/services/pokemon'
 
 // ------------------------------------------------------------------
@@ -85,23 +88,57 @@ export function useAbility(nameOrId: string | number | null) {
 }
 
 // ------------------------------------------------------------------
-// Generation
+// Generation List
 // ------------------------------------------------------------------
-export function useGeneration(nameOrId: string | number | null) {
+export function useGenerationList() {
   return useQuery({
-    queryKey: pokemonKeys.generation(nameOrId ?? ''),
-    queryFn: ({ signal }) => fetchGeneration(nameOrId!, signal),
-    enabled: nameOrId !== null && nameOrId !== '',
+    queryKey: pokemonKeys.generations(),
+    queryFn: ({ signal }) => fetchGenerationList(signal),
+    staleTime: 60 * 60 * 1000, // Generations never change
   })
 }
 
 // ------------------------------------------------------------------
-// Pokédex
+// Type List
 // ------------------------------------------------------------------
-export function usePokedex(nameOrId: string | number | null) {
+export function useTypeList() {
   return useQuery({
-    queryKey: pokemonKeys.pokedex(nameOrId ?? ''),
-    queryFn: ({ signal }) => fetchPokedex(nameOrId!, signal),
-    enabled: nameOrId !== null && nameOrId !== '',
+    queryKey: pokemonKeys.types(),
+    queryFn: ({ signal }) => fetchTypeList(signal),
+    staleTime: 60 * 60 * 1000, // Types rarely change
+  })
+}
+
+// ------------------------------------------------------------------
+// Pokemon by Type
+// ------------------------------------------------------------------
+export function usePokemonByType(typeName: string | null) {
+  return useQuery({
+    queryKey: pokemonKeys.typePokemon(typeName ?? ''),
+    queryFn: ({ signal }) => fetchPokemonByType(typeName!, signal),
+    enabled: Boolean(typeName && typeName !== 'all'),
+  })
+}
+
+// ------------------------------------------------------------------
+// Pokemon by Generation
+// ------------------------------------------------------------------
+export function usePokemonByGeneration(genId: string | number | null) {
+  return useQuery({
+    queryKey: pokemonKeys.generationSpecies(genId ?? ''),
+    queryFn: ({ signal }) => fetchPokemonByGeneration(genId!, signal),
+    enabled: Boolean(genId && genId !== 'all'),
+  })
+}
+
+// ------------------------------------------------------------------
+// Multiple Pokemon (for comparison & tray)
+// ------------------------------------------------------------------
+export function useMultiplePokemon(ids: (string | number)[]) {
+  return useQuery({
+    queryKey: pokemonKeys.multiple(ids),
+    queryFn: ({ signal }) => fetchMultiplePokemon(ids, signal),
+    enabled: ids.length > 0,
+    staleTime: 10 * 60 * 1000,
   })
 }
