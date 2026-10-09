@@ -39,3 +39,7 @@ yarn-error.log*
 
 # Vite cache
 .vite/
+
+# Local nested subfolders
+ai/
+

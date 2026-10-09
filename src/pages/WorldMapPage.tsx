@@ -12,10 +12,11 @@
 //   • Status bar at top-right
 
 import { useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe, Navigation, Wifi, WifiOff, MapPin,
-  ChevronDown, Info, Loader2, AlertTriangle,
+  ChevronDown, Info, Loader2, AlertTriangle, ArrowLeft,
 } from 'lucide-react'
 import { WorldMap } from '@/components/map/WorldMap'
 import { SearchBar } from '@/components/map/SearchBar'
@@ -232,15 +233,26 @@ export function WorldMapPage() {
     <div className="relative w-screen h-screen bg-slate-900 overflow-hidden flex flex-col">
       {/* ── Top navigation bar ── */}
       <div className="relative z-30 flex items-center justify-between px-4 py-3 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/60">
-        {/* Brand */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg">
-            <Globe className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <span className="font-bold text-slate-100 text-sm tracking-wide">PokéVerse</span>
-            <span className="ml-2 text-xs text-slate-400 font-medium uppercase tracking-wider">World Map</span>
-          </div>
+        {/* Brand & Navigation */}
+        <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 transition-colors"
+            title="Return to Pokédex"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Pokédex</span>
+          </Link>
+          <div className="h-4 w-px bg-slate-700" />
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+              <Globe className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <span className="font-bold text-slate-100 text-sm tracking-wide">PokéVerse</span>
+              <span className="ml-2 text-xs text-indigo-400 font-semibold uppercase tracking-wider">World Map</span>
+            </div>
+          </Link>
         </div>
 
         {/* IP location info + controls */}

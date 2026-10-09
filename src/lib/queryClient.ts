@@ -41,7 +41,12 @@ export const pokemonKeys = {
   type: (nameOrId: string | number) => [...pokemonKeys.all, 'type', nameOrId] as const,
   ability: (nameOrId: string | number) => [...pokemonKeys.all, 'ability', nameOrId] as const,
   generation: (nameOrId: string | number) => [...pokemonKeys.all, 'generation', nameOrId] as const,
+  generations: () => [...pokemonKeys.all, 'generations'] as const,
   pokedex: (nameOrId: string | number) => [...pokemonKeys.all, 'pokedex', nameOrId] as const,
+  types: () => [...pokemonKeys.all, 'types'] as const,
+  typePokemon: (type: string) => [...pokemonKeys.all, 'typePokemon', type] as const,
+  generationSpecies: (genId: string | number) => [...pokemonKeys.all, 'generationSpecies', genId] as const,
+  multiple: (ids: (string | number)[]) => [...pokemonKeys.all, 'multiple', ...ids] as const,
 } as const
 
 export const geoKeys = {
