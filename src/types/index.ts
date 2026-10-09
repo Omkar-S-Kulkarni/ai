@@ -10,3 +10,5 @@ export * from './geolocation'
 export * from './api'
 export * from './simulation'
 export * from './map'
+export * from '../reliability/types'
+
